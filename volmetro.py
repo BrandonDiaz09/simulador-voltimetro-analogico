@@ -12,16 +12,29 @@ class VolmetroAnalogico:
         #tk.Label(mainframe, text="feet").grid(column=3, row=1, sticky=W)
         # Configuración del gráfico
         self.fig, self.ax = plt.subplots()
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.master)
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        
+        # Frame para la gráfica
+        frame_grafica = tk.Frame(self.master)   
+        frame_grafica.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=frame_grafica)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+       # Frrame para el botón
+        frame_boton = tk.Frame(self.master)
+        frame_boton.pack(side=tk.BOTTOM, fill=tk.X)
+        boton_encendido = tk.Button(frame_boton, text="Encender/Apagar", command=self.toggle_meter)
+        boton_encendido.pack(side=tk.TOP, fill=tk.X)
+
         # Inicialización del medidor
         self.ax.set_xlim(0, 61)
         self.ax.set_ylim(0, 1)
         self.needle, = self.ax.plot([], [], 'r-')  # Aguja inicialmente vacía
+        self.ax.text(30, 0.5, "V", fontsize=24, va='center', ha='center')
+
         # Dibujar el medidor
         self.draw_meter()
 
+    def toggle_meter(self):
+        # Función para manejar el encendido y apagado
+        pass
     def update_needle(self, value):
         # Actualizar la aguja del medidor según el valor de voltaje
         self.needle.set_data([value, value], [0, 0.5])
