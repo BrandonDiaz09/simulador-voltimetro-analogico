@@ -2,100 +2,92 @@ import tkinter as tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 import numpy as np
-import serial
 import random
+import serial
 
 class VolmetroAnalogico:
     def __init__(self, master):
+        # Configuración inicial de la ventana principal
         self.master = master
         self.master.title("Simulador de Voltímetro Analógico")
-        #tk.Label(mainframe, text="feet").grid(column=3, row=1, sticky=W)
-        # Configuración del gráfico
-        self.fig, self.ax = plt.subplots()
-        # Frame para la gráfica
-        frame_grafica = tk.Frame(self.master)   
+
+        # Configuración del gráfico de Matplotlib
+        self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        frame_grafica = tk.Frame(self.master)
         frame_grafica.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.canvas = FigureCanvasTkAgg(self.fig, master=frame_grafica)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
-       # Frrame para el botón
+
+        # Configuración del botón de Encender/Apagar
         frame_boton = tk.Frame(self.master)
         frame_boton.pack(side=tk.BOTTOM, fill=tk.X)
         boton_encendido = tk.Button(frame_boton, text="Encender/Apagar", command=self.toggle_meter)
         boton_encendido.pack(side=tk.TOP, fill=tk.X)
 
-        # Inicialización del medidor
-        self.ax.set_xlim(0, 61)
-        self.ax.set_ylim(0, 1)
+        # Inicialización y configuración del medidor
         self.needle, = self.ax.plot([], [], 'r-')  # Aguja inicialmente vacía
-        self.ax.text(30, 0.5, "V", fontsize=24, va='center', ha='center')
+        self.ax.text(np.pi/2, 0.4, "V", fontsize=24, va='center', ha='center')  # Símbolo de voltaje
 
-        # Dibujar el medidor
-        self.draw_meter()
+        self.draw_meter()  # Dibuja el medidor
 
     def toggle_meter(self):
-        # Función para manejar el encendido y apagado
+        # Funcionalidad del botón para manejar el encendido y apagado del voltímetro
         pass
+
     def update_needle(self, value):
-        # Actualizar la aguja del medidor según el valor de voltaje
-        self.needle.set_data([value, value], [0, 0.5])
+        # Actualiza la posición de la aguja basada en el valor de voltaje proporcionado
+        max_value = 60
+        min_angle = 0.5
+        max_angle = np.pi - 0.5
+        normalized_value = (value - 0) / (max_value - 0)
+        angle = min_angle + normalized_value * (max_angle - min_angle)
+        self.needle.set_data([angle, angle], [0, 0.9])
         self.canvas.draw_idle()
 
     def draw_meter(self):
-        # Dibujar el medidor con marcas
-        #self.ax.axis('off')
-        for i in range(61):
-            if i%10==0:
-                self.ax.plot([i, i], [0.75,1], 'k')  # Marcas del medidor
+        # Dibuja las marcas y etiquetas del medidor
+        divisions = 60
+        max_value = 60
+        for i in range(divisions + 1):
+            value = i * (max_value / divisions)
+            angle = 0.5 + i * (np.pi - 1) / divisions
+            if i % 10 == 0:
+                self.ax.plot([angle, angle], [0.8 - 0.1, 0.9], color='k')
+                self.ax.text(angle, 0.9 + 0.08, str(int(value)), horizontalalignment='center', verticalalignment='center')
             else:
-                self.ax.plot([i, i], [0.85,1], 'k')  # Marcas del medidor
-        self.ax.tick_params(axis='x', bottom=False,labeltop=True,labelbottom=False)
-        self.ax.tick_params(axis='y', left=False,labelleft=False)
+                self.ax.plot([angle, angle], [0.9 - 0.1, 0.9], color='k')
+        self.ax.set_theta_zero_location("W")
+        self.ax.set_theta_direction(-1)
+        self.ax.axis('off')
 
-
-# Flag para controlar el modo de simulación
 SIMULATED = True
-
+# Funciones para leer datos del serial o simular datos
 def leer_serial_simulado():
-    """Esta función simula la lectura de datos desde un puerto serial."""
-    # Simula la lectura de un valor binario aleatorio
     simulated_bin_value = random.randint(0, 255)
-    # Calcula el voltaje simulado
-    voltaje_simulado = (simulated_bin_value * 235.2941) / 1000
-    return voltaje_simulado
+    return (simulated_bin_value * 235.2941) / 1000
 
 def leer_serial_real(ser):
-    """Esta función lee los datos reales desde un puerto serial."""
-    # Leer desde serial y decodificar
     linea = ser.readline().decode('utf-8').rstrip()
-    # Convertir a valor de voltaje
-    valor_binario = int(linea)  # Asegúrate de que los datos sean correctos
-    voltaje = (valor_binario * 235.2941) / 1000  # Ajustar según tus cálculos
-    return voltaje
+    return int(linea) * 235.2941 / 1000
 
 def leer_serial():
-    """Esta función decide si leer desde el puerto real o simular la lectura."""
     if SIMULATED:
         return leer_serial_simulado()
     else:
-        ser = serial.Serial('COM3', 19200)  # Ajusta a tu configuración
+        # Asumiendo que tienes configurado tu puerto serial correctamente
+        ser = serial.Serial('COM3', 19200)
         return leer_serial_real(ser)
 
-
+# Inicialización y ejecución de la aplicación Tkinter
 if __name__ == '__main__':
     root = tk.Tk()
     vm = VolmetroAnalogico(root)
-    # Función de actualización
+
     def actualizar():
         voltaje = leer_serial()
         vm.update_needle(voltaje)
         root.update()
-        root.after(1000, actualizar)  # Actualiza cada segundo
+        root.after(1000, actualizar)  # Continúa actualizando el voltaje
 
-    #print("Hola")
-    # Simulando la actualización del voltaje
-    #for v in np.linspace(0, 10, 100):
-    #    vm.update_needle(leer_serial())
-    #    root.update()
-    #    root.after(1000)  # Espera un poco antes de actualizar
     actualizar()
     root.mainloop()
