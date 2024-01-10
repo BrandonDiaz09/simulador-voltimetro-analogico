@@ -11,27 +11,38 @@ class VolmetroAnalogico:
         self.master = master
         self.master.title("Simulador de Voltímetro Analógico")
 
-        frame_volimetro = tk.Frame(self.master, bg='red', borderwidth=2, relief='solid')
-        frame_volimetro.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=0)
+        frame_volimetro = tk.Frame(self.master, bg='white', relief='solid')
+        frame_volimetro.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        frame_grafica = tk.Frame(frame_volimetro, bg='green',borderwidth=20, relief='solid')
-        frame_grafica.pack(side=tk.TOP, padx=20, pady=20)
-        frame_bg = tk.Frame(frame_volimetro, bg='black',borderwidth=20, relief='solid')
-        frame_bg.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True,padx=20, pady=20)
+        frame_grafica = tk.Frame(frame_volimetro, bg='#2B2B2B',borderwidth=10, relief='solid')
+        frame_grafica.pack(side=tk.BOTTOM,fill=tk.X,expand=False,anchor='n', padx=15, pady=15)
+
+
         self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'})
         self.canvas = FigureCanvasTkAgg(self.fig, master=frame_grafica)
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.X, expand=False) 
+
+        # Agregar una línea divisoria
+        linea_divisoria = tk.Frame(frame_grafica, bg='black', height=10) 
+        linea_divisoria.pack(side=tk.TOP, fill=tk.X, expand=False)
+
+        frame_bg = tk.Frame(frame_grafica, bg='#2B2B2B', relief='solid', height=50)
+        frame_bg.pack(side=tk.TOP, fill=tk.BOTH, expand=True)  
+
+    
+        titulo_label = tk.Label(frame_volimetro, text="Voltímetro Analógico", font=("Arial", 18, "bold"), bg='white', fg='black')
+        titulo_label.pack(side=tk.TOP, fill=tk.X, pady=[10,0]) 
+
+        # Label para mostrar el valor del voltaje
+        self.voltaje_label = tk.Label(frame_bg, text="0 V", font=("Digital-7", 60), bg='#2B2B2B', fg='#19D3AE')
+        self.voltaje_label.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 
         # Inicialización y configuración del medidor
         self.needle, = self.ax.plot([], [], 'r-')  # Aguja inicialmente vacía
-        self.ax.text(np.pi/2, 0.4, "V", fontsize=24, va='center', ha='center')  # Símbolo de voltaje
+        self.ax.text(np.pi/2, 0.4, "V", fontsize=30, va='center', ha='center')  # Símbolo de voltaje
 
         self.draw_meter()  # Dibuja el medidor
-
-    def toggle_meter(self):
-        # Funcionalidad del botón para manejar el encendido y apagado del voltímetro
-        pass
 
     def update_needle(self, value):
         # Actualiza la posición de la aguja basada en el valor de voltaje proporcionado
@@ -40,14 +51,23 @@ class VolmetroAnalogico:
         max_angle = np.pi - 0.5
         normalized_value = (value - 0) / (max_value - 0)
         angle = min_angle + normalized_value * (max_angle - min_angle)
-        self.needle.set_data([angle, angle], [0, 0.9])
-        self.canvas.draw_idle()
-        if value > 40:  # Ejemplo de umbral alto
-            self.needle.set_color('red')
-        elif value > 20:  # Ejemplo de umbral medio
-            self.needle.set_color('yellow')
+        self.needle.set_data([angle, angle], [0, 1])
+        # Definir umbrales
+        umbral_bajo = 0.2 * max_value
+        umbral_alto = 0.8 * max_value
+
+        # Cambiar colores según el valor del voltaje
+        if value < umbral_bajo:
+            color = '#7FDBFF'  # Azul claro
+        elif umbral_bajo <= value < umbral_alto:
+            color = '#2ECC40'  # Verde
         else:
-            self.needle.set_color('green')
+            color = '#FF4136'  # Rojo
+        self.voltaje_label.config(text=f"{value:.2f} V")
+        self.needle.set_color(color)
+        self.voltaje_label.config(fg=color)
+        self.canvas.draw_idle()
+
 
     def draw_meter(self):
         # Establecer el rango del eje radial (eje y)
@@ -63,12 +83,12 @@ class VolmetroAnalogico:
             value = i * (max_value / divisions)
             angle = 0.5 + i * (np.pi - 1) / divisions
             if i % 10 == 0:
-                self.ax.plot([angle, angle], [0.8 - 0.1, 0.9], color='k')
-                self.ax.text(angle, 0.9 + 0.08, str(int(value)), horizontalalignment='center', verticalalignment='center')
+                self.ax.plot([angle, angle], [0.8, 1], color='k')
+                self.ax.text(angle, 1.1, str(int(value)), horizontalalignment='center', verticalalignment='center')
             elif i% 5==0:
-                self.ax.plot([angle, angle], [0.86 - 0.1, 0.9], color='k')
+                self.ax.plot([angle, angle], [0.86, 1], color='k')
             else:
-                self.ax.plot([angle, angle], [0.9 - 0.1, 0.9], color='k')
+                self.ax.plot([angle, angle], [0.9, 1], color='k')
         self.ax.set_theta_zero_location("W")
         self.ax.set_theta_direction(-1)
         self.ax.axis('off')
@@ -93,6 +113,7 @@ def leer_serial():
 # Inicialización y ejecución de la aplicación
 if __name__ == '__main__':
     root = tk.Tk()
+    root.geometry("550x700")  # Ancho x Alto
     vm = VolmetroAnalogico(root)
 
     def actualizar():
