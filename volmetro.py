@@ -18,11 +18,6 @@ class VolmetroAnalogico:
         self.canvas = FigureCanvasTkAgg(self.fig, master=frame_grafica)
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
 
-        # Configuración del botón de Encender/Apagar
-        frame_boton = tk.Frame(self.master)
-        frame_boton.pack(side=tk.BOTTOM, fill=tk.X)
-        boton_encendido = tk.Button(frame_boton, text="Encender/Apagar", command=self.toggle_meter)
-        boton_encendido.pack(side=tk.TOP, fill=tk.X)
 
         # Inicialización y configuración del medidor
         self.needle, = self.ax.plot([], [], 'r-')  # Aguja inicialmente vacía
@@ -43,8 +38,20 @@ class VolmetroAnalogico:
         angle = min_angle + normalized_value * (max_angle - min_angle)
         self.needle.set_data([angle, angle], [0, 0.9])
         self.canvas.draw_idle()
+        if value > 40:  # Ejemplo de umbral alto
+            self.needle.set_color('red')
+        elif value > 20:  # Ejemplo de umbral medio
+            self.needle.set_color('yellow')
+        else:
+            self.needle.set_color('green')
 
     def draw_meter(self):
+        # Establecer el rango del eje radial (eje y)
+        self.ax.set_ylim(0, 1)  # Esto asegura que solo se muestra la mitad superior
+
+        # Establecer el rango angular
+        self.ax.set_thetamin(0)    # Mínimo ángulo en grados
+        self.ax.set_thetamax(180)  # Máximo ángulo en grados
         # Dibuja las marcas y etiquetas del medidor
         divisions = 60
         max_value = 60
@@ -54,6 +61,8 @@ class VolmetroAnalogico:
             if i % 10 == 0:
                 self.ax.plot([angle, angle], [0.8 - 0.1, 0.9], color='k')
                 self.ax.text(angle, 0.9 + 0.08, str(int(value)), horizontalalignment='center', verticalalignment='center')
+            elif i% 5==0:
+                self.ax.plot([angle, angle], [0.86 - 0.1, 0.9], color='k')
             else:
                 self.ax.plot([angle, angle], [0.9 - 0.1, 0.9], color='k')
         self.ax.set_theta_zero_location("W")
@@ -74,11 +83,10 @@ def leer_serial():
     if SIMULATED:
         return leer_serial_simulado()
     else:
-        # Asumiendo que tienes configurado tu puerto serial correctamente
         ser = serial.Serial('COM3', 19200)
         return leer_serial_real(ser)
 
-# Inicialización y ejecución de la aplicación Tkinter
+# Inicialización y ejecución de la aplicación
 if __name__ == '__main__':
     root = tk.Tk()
     vm = VolmetroAnalogico(root)
