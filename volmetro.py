@@ -11,12 +11,16 @@ class VolmetroAnalogico:
         self.master = master
         self.master.title("Simulador de Voltímetro Analógico")
 
-        # Configuración del gráfico de Matplotlib
+        frame_volimetro = tk.Frame(self.master, bg='red', borderwidth=2, relief='solid')
+        frame_volimetro.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=0)
+
+        frame_grafica = tk.Frame(frame_volimetro, bg='green',borderwidth=20, relief='solid')
+        frame_grafica.pack(side=tk.TOP, padx=20, pady=20)
+        frame_bg = tk.Frame(frame_volimetro, bg='black',borderwidth=20, relief='solid')
+        frame_bg.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True,padx=20, pady=20)
         self.fig, self.ax = plt.subplots(subplot_kw={'projection': 'polar'})
-        frame_grafica = tk.Frame(self.master)
-        frame_grafica.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.canvas = FigureCanvasTkAgg(self.fig, master=frame_grafica)
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
 
         # Inicialización y configuración del medidor
